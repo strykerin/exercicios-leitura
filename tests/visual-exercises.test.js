@@ -29,3 +29,17 @@ test('focus splits odd, even and accented words without losing letters', () => {
     assert.equal(splitFocus(word).join(''), word);
   }
 });
+
+test('block focus selects a central letter, skipping spaces and punctuation', async () => {
+  const { splitBlockFocus } = await import('../visual-exercises.js');
+  assert.deepEqual(splitBlockFocus('até a feira.'), ['até a ', 'f', 'eira.']);
+  assert.deepEqual(splitBlockFocus('ab cd'), ['a', 'b', ' cd']);
+  assert.deepEqual(splitBlockFocus('a...b'), ['', 'a', '...b']);
+  assert.deepEqual(splitBlockFocus(' ... '), [' ... ', '', '']);
+  assert.deepEqual(splitBlockFocus(''), ['', '', '']);
+  for (const text of ['Um pequeno passo', 'coração e atenção', 'gato', 'é', 'até a feira.']) {
+    const parts = splitBlockFocus(text);
+    assert.equal(parts.join(''), text);
+    assert.match(parts[1], /^\p{L}$/u);
+  }
+});

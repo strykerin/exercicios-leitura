@@ -1,4 +1,4 @@
-import { syllableWords, wordPairs, randomSequence, splitFocus } from './visual-exercises.js';
+import { syllableWords, wordPairs, randomSequence, splitFocus, splitBlockFocus } from './visual-exercises.js';
 import { chunks, wordCount, duration, passages, scoreQuiz, dailyPassageIndex, textLengthGroup, validSpeed } from './reading.js';
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -44,8 +44,14 @@ function reset() {
     $('#passage-label').textContent = mode === 'flash' ? `${$('#syllables').value} SÍLABAS` : 'PERCEPÇÃO DE FORMAS';
     $('#session-length').textContent = `${groups.length} ${mode === 'flash' ? 'palavras' : 'pares'} · ${Math.round(groups.length * exposureTime() / 1000)} s · Sem questionário`;
     renderVisual(mode === 'flash' ? groups[0] : ['rei', 'lei']);
-  } else if (mode === 'chunk') $('#word-display').textContent = 'Um pequeno passo';
+  } else if (mode === 'chunk') renderBlock('Um pequeno passo');
   else { $('#word-display').replaceChildren(...groups.map(group => { const span = document.createElement('span'); span.textContent = group + ' '; return span; })); $('#word-display').scrollTop = 0; }
+}
+function renderBlock(text) {
+  const [before, letter, after] = splitBlockFocus(text);
+  const focus = document.createElement('span');
+  focus.className = 'block-focus'; focus.textContent = letter;
+  $('#word-display').replaceChildren(document.createTextNode(before), focus, document.createTextNode(after));
 }
 function renderVisual(item) {
   const display = $('#word-display');
@@ -65,7 +71,7 @@ function showChunk() {
     $('#reading-state').textContent = `${index + 1} / ${groups.length} ${mode === 'flash' ? 'PALAVRAS' : 'PARES'}`;
     return;
   }
-  if (mode === 'chunk') $('#word-display').textContent = groups[index];
+  if (mode === 'chunk') renderBlock(groups[index]);
   else {
     const spans = [...$('#word-display').children];
     spans.forEach((span, i) => { span.classList.toggle('current', i === index); span.classList.toggle('read', i < index); });

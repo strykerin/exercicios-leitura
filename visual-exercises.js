@@ -61,3 +61,14 @@ export function splitFocus(word) {
   const middle = Math.floor((letters.length - 1) / 2);
   return [letters.slice(0, middle).join(''), letters[middle], letters.slice(middle + 1).join('')];
 }
+
+// Use the nearest letter to the block's center; ties favor the left letter.
+export function splitBlockFocus(text) {
+  const characters = Array.from(text.normalize('NFC'));
+  const center = (characters.length - 1) / 2;
+  let focus = -1;
+  characters.forEach((character, i) => {
+    if (/\p{L}/u.test(character) && (focus === -1 || Math.abs(i - center) < Math.abs(focus - center))) focus = i;
+  });
+  return focus === -1 ? [text, '', ''] : [characters.slice(0, focus).join(''), characters[focus], characters.slice(focus + 1).join('')];
+}
