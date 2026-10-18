@@ -1,48 +1,19 @@
 import { syllableWords, wordPairs, randomSequence, splitFocus } from './visual-exercises.js';
-import { chunks, wordCount, duration, localDay, streak, passages, scoreQuiz, dailyPassageIndex, textLengthGroup, validSpeed } from './reading.js';
+import { chunks, wordCount, duration, passages, scoreQuiz, dailyPassageIndex, textLengthGroup, validSpeed } from './reading.js';
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
-const translatedTitles = {
-  'The art of paying attention': 'A arte de prestar atenção',
-  'A forest beneath the city': 'Uma floresta na cidade',
-  'Small steps, lasting change': 'Pequenos passos, mudanças duradouras',
-  'Your own passage': 'Seu próprio texto'
-};
-let sessions = [];
-try { const saved = JSON.parse(localStorage.getItem('stride-sessions') || '[]'); if (Array.isArray(saved)) sessions = saved.filter(s => s && typeof s.day === 'string' && Number.isFinite(s.wpm) && Number.isFinite(s.seconds) && typeof s.title === 'string'); } catch { /* Storage may be unavailable. */ }
 let passage = passages[dailyPassageIndex()];
-let mode = 'chunk', size = 3, wpm = 250, status = 'ready', index = 0, groups = [], timer, startedAt = 0, elapsed = 0, remaining = 0, deadline = 0, answered = false;
-wpm = validSpeed(sessions.at(-1)?.wpm);
+let mode = 'chunk', size = 3, wpm = 250, status = 'ready', index = 0, groups = [], timer, remaining = 0, deadline = 0, answered = false;
 try { wpm = validSpeed(localStorage.getItem('stride-speed'), wpm); } catch { /* Keep the current visit usable without storage. */ }
 $('#speed').value = wpm;
 $('#speed-value').textContent = wpm;
-$('#date-label').textContent = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date());
 function toast(message) { $('#toast').textContent = message; $('#toast').hidden = false; setTimeout(() => $('#toast').hidden = true, 4000); }
-function renderStats() {
-  const currentStreak = streak(sessions);
-  $('#streak').innerHTML = `${currentStreak} <small>${currentStreak === 1 ? 'dia' : 'dias'}</small>`;
-  $('#current-speed').innerHTML = `${wpm} <small>PPM</small>`;
-  const today = sessions.filter(s => s.day === localDay()).reduce((sum, s) => sum + s.seconds, 0) / 60;
-  $('#today-minutes').innerHTML = `${today ? today.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '0'} <small>/ 5 min</small>`;
-  $('#goal-fill').style.width = `${Math.min(100, today / 5 * 100)}%`;
-  const history = $('#history'); history.replaceChildren();
-  if (!sessions.length) { const p = document.createElement('p'); p.className = 'muted'; p.textContent = 'Sua jornada começa com uma sessão. Conclua uma prática para ver seu progresso aqui.'; history.append(p); }
-  [...sessions].reverse().slice(0, 30).forEach(s => {
-    const row = document.createElement('div'); row.className = 'history-row';
-    const title = document.createElement('div'); title.textContent = translatedTitles[s.title] || s.title; const date = document.createElement('small'); date.textContent = `${s.day.split('-').reverse().join('/')} · ${({ paced: 'Leitura guiada', chunk: 'Leitura em blocos', flash: 'Palavras inteiras', pairs: 'Palavras parecidas' })[s.mode] || 'Leitura em blocos'}`; title.append(date); row.append(title);
-    const comprehension = Number.isInteger(s.totalQuestions) && s.totalQuestions > 0 ? `Compreensão: ${s.score}/${s.totalQuestions} acertos` : s.correct === null ? 'Reflexão concluída' : s.correct ? 'Compreensão: correta' : 'Compreensão: revisar';
-    const visual = s.mode === 'flash' || s.mode === 'pairs';
-    for (const value of visual ? [`${s.exposure} ms / ${s.mode === 'flash' ? 'palavra' : 'par'}`, s.mode === 'flash' ? `${s.syllables} sílabas` : '30 pares', 'Prática visual concluída'] : [`${s.wpm} PPM`, `${s.size} palavras / bloco`, comprehension]) { const cell = document.createElement('span'); cell.textContent = value; row.append(cell); }
-    history.append(row);
-  });
-}
 function switchView(view) {
   if (status === 'running') pause();
   setReadingFocus(false);
   document.body.classList.toggle('guided-view', view === 'practice' && mode === 'paced');
   $$('.view').forEach(el => el.hidden = el.id !== `${view}-view`);
   $$('.nav').forEach(el => el.classList.toggle('active', el.dataset.view === view));
-  if (view === 'progress') renderStats();
 }
 $$('.nav').forEach(button => button.addEventListener('click', () => switchView(button.dataset.view)));
 const isVisual = () => mode === 'flash' || mode === 'pairs';
@@ -54,7 +25,7 @@ function setReadingFocus(focused) {
 function reset() {
   setReadingFocus(false);
   document.body.classList.toggle('guided-view', mode === 'paced' && !$('#practice-view').hidden);
-  clearTimeout(timer); status = 'ready'; index = 0; elapsed = 0; remaining = 0;
+  clearTimeout(timer); status = 'ready'; index = 0; remaining = 0;
   groups = isVisual() ? randomSequence(mode === 'flash' ? syllableWords[$('#syllables').value].map(word => word.replaceAll('-', '')) : wordPairs, mode === 'flash' ? 90 : 30) : chunks(passage.text, size);
   $('#reading-settings').hidden = isVisual(); $('#visual-settings').hidden = !isVisual();
   $('#syllable-setting').hidden = mode !== 'flash'; $('#pair-setting').hidden = mode !== 'pairs';
@@ -111,30 +82,27 @@ function schedule(ms) {
 function start() {
   if (status === 'running') { pause(); return; }
   if (status === 'complete') reset();
-  const resuming = status === 'paused'; status = 'running'; startedAt = performance.now();
+  const resuming = status === 'paused'; status = 'running';
   setReadingFocus(mode === 'paced');
   $('#reset').hidden = false; $('#start').textContent = 'Pausar Ⅱ'; $('#reader-hint').textContent = isVisual() ? (mode === 'flash' ? 'Olhe para a letra vermelha · Espaço para pausar' : 'Mantenha o olhar no ponto central · Espaço para pausar') : 'Espaço para pausar · Respire e acompanhe o ritmo';
   showChunk(); schedule(resuming ? remaining : exposureTime());
 }
 function pause() {
   if (status !== 'running') return;
-  clearTimeout(timer); elapsed += performance.now() - startedAt; remaining = Math.max(0, deadline - performance.now()); status = 'paused';
+  clearTimeout(timer); remaining = Math.max(0, deadline - performance.now()); status = 'paused';
   $('#start').textContent = 'Continuar →'; $('#reading-state').textContent = 'EM PAUSA'; $('#reader-hint').textContent = 'Sem pressa. Continue quando quiser.';
 }
 function finish() {
   if (isVisual()) {
-    elapsed += performance.now() - startedAt; status = 'complete';
-    sessions.push({ day: localDay(), title: mode === 'flash' ? 'Palavras inteiras' : 'Palavras parecidas', wpm, size, mode, seconds: elapsed / 1000, correct: null, exposure: Number($('#exposure').value), syllables: Number($('#syllables').value) });
-    try { localStorage.setItem('stride-sessions', JSON.stringify(sessions)); } catch { toast('Prática concluída. Progresso mantido apenas nesta visita.'); }
-    renderStats();
+    status = 'complete';
     $('#read-fill').style.width = '100%'; $('#reading-state').textContent = 'PRÁTICA CONCLUÍDA';
     $('#word-display').replaceChildren();
     $('#reader-hint').textContent = 'Sessão concluída! Ajuste o tempo para um ritmo confortável.';
     $('#start').textContent = 'Praticar novamente →';
     return;
   }
-  elapsed += performance.now() - startedAt; status = 'quiz'; $('#read-fill').style.width = '100%'; $('#reading-state').textContent = 'LEITURA CONCLUÍDA'; $('#start').disabled = true;
-  answered = false; $('#quiz-feedback').textContent = ''; $('#quiz-submit').textContent = passage.questions?.length ? 'Verificar respostas →' : 'Salvar prática →';
+  status = 'quiz'; $('#read-fill').style.width = '100%'; $('#reading-state').textContent = 'LEITURA CONCLUÍDA'; $('#start').disabled = true;
+  answered = false; $('#quiz-feedback').textContent = ''; $('#quiz-submit').textContent = passage.questions?.length ? 'Verificar respostas →' : 'Concluir prática →';
   $('#quiz-question').textContent = passage.questions?.length ? `Responda às ${passage.questions.length} perguntas sobre “${passage.title}”.` : 'Sem consultar o texto, resuma a ideia principal com suas próprias palavras.';
   $('#quiz-options').replaceChildren();
   if (passage.questions?.length) passage.questions.forEach((question, questionIndex) => {
@@ -157,9 +125,7 @@ $('#quiz-form').addEventListener('submit', event => {
   const answers = questions.map((_, i) => Number(data.get(`answer-${i}`)));
   const score = questions.length ? scoreQuiz(questions, answers) : null;
   const correct = questions.length ? score === questions.length : null;
-  sessions.push({ day: localDay(), title: passage.title, wpm, size, mode, seconds: elapsed / 1000, correct, score, totalQuestions: questions.length });
-  try { localStorage.setItem('stride-sessions', JSON.stringify(sessions)); } catch { toast('Prática concluída. O armazenamento do navegador está indisponível; o progresso será mantido apenas nesta visita.'); }
-  renderStats(); answered = true;
+  answered = true;
   questions.forEach((question, i) => {
     const feedback = $$('.question-feedback')[i]; feedback.hidden = false;
     const isCorrect = answers[i] === question.answer;
@@ -174,7 +140,7 @@ $('#quiz-form').addEventListener('submit', event => {
       label.append(badge);
     });
   });
-  $('#quiz-feedback').textContent = correct === null ? 'Prática salva. Reflita sobre o que você compreendeu antes de aumentar o ritmo.' : `Você acertou ${score} de ${questions.length} perguntas (${Math.round(score / questions.length * 100)}%). Prática salva. ${correct ? 'Quando esse ritmo ficar confortável, experimente mais uma palavra por bloco.' : 'Revise as explicações e experimente diminuir a velocidade na próxima sessão.'}`;
+  $('#quiz-feedback').textContent = correct === null ? 'Prática concluída. Reflita sobre o que você compreendeu antes de aumentar o ritmo.' : `Você acertou ${score} de ${questions.length} perguntas (${Math.round(score / questions.length * 100)}%). Prática concluída. ${correct ? 'Quando esse ritmo ficar confortável, experimente mais uma palavra por bloco.' : 'Revise as explicações e experimente diminuir a velocidade na próxima sessão.'}`;
   $$('#quiz-options input, #quiz-options textarea').forEach(input => input.disabled = true);
   $('#quiz-submit').textContent = 'Voltar à prática →';
 });
@@ -188,20 +154,17 @@ document.addEventListener('keydown', event => {
 });
 $('#speed').addEventListener('input', event => {
   wpm = validSpeed(event.target.value); $('#speed-value').textContent = wpm;
-  $('#current-speed').innerHTML = `${wpm} <small>PPM</small>`;
   try { localStorage.setItem('stride-speed', String(wpm)); } catch { toast('A velocidade será mantida nesta visita, mas não foi possível salvá-la no navegador.'); }
   reset();
 });
 $$('[data-chunk]').forEach(button => button.addEventListener('click', () => { size = Number(button.dataset.chunk); $$('[data-chunk]').forEach(b => { b.classList.toggle('selected', b === button); b.setAttribute('aria-pressed', String(b === button)); }); reset(); }));
 $$('[data-mode]').forEach(button => button.addEventListener('click', () => {
   mode = button.dataset.mode; $$('[data-mode]').forEach(b => { b.classList.toggle('selected', b === button); b.setAttribute('aria-selected', String(b === button)); });
-  $('#exercise-label').textContent = mode === 'chunk' ? 'AMPLIE SEU CAMPO DE LEITURA' : 'MANTENHA UM RITMO CONSTANTE';
   $('#exercise-title').textContent = mode === 'chunk' ? 'Leia várias palavras de uma vez.' : 'Deixe o ritmo guiar sua atenção.';
   $('#exercise-description').textContent = mode === 'chunk' ? 'Relaxe o olhar e perceba cada bloco como uma ideia.' : 'Acompanhe cada bloco em destaque ao longo do texto.';
   if (isVisual()) {
-    $('#exercise-label').textContent = mode === 'flash' ? 'RECONHEÇA A PALAVRA INTEIRA' : 'OBSERVE AS DIFERENÇAS';
     $('#exercise-title').textContent = mode === 'flash' ? 'Uma palavra. Um olhar.' : 'Duas palavras, um ponto de foco.';
-    $('#exercise-description').textContent = mode === 'flash' ? 'Palavras aleatórias de 2, 3 ou 4 sílabas. Fixe o olhar na letra vermelha e tente reconhecer a palavra inteira, sem separar as sílabas.' : 'Olhe para o ponto entre as palavras e tente perceber as diferenças nas formas sem olhar diretamente para elas.';
+    $('#exercise-description').textContent = mode === 'flash' ? 'Fixe o olhar na letra vermelha e reconheça a palavra inteira.' : 'Mantenha o olhar no ponto central e perceba as diferenças entre as palavras.';
   }
   reset();
 }));
@@ -235,4 +198,4 @@ $('#use-custom').addEventListener('click', () => {
 $('#exposure').addEventListener('input', () => { $('#exposure-value').textContent = $('#exposure').value; reset(); });
 $('#syllables').addEventListener('change', reset);
 $('#pair-gap').addEventListener('input', () => { $('#word-display').style.setProperty('--pair-gap', `${$('#pair-gap').value}px`); reset(); });
-renderStats(); reset();
+reset();
