@@ -1,3 +1,4 @@
+import { syllableWords, wordPairs, randomSequence, splitFocus } from './visual-exercises.js';
 import { chunks, wordCount, duration, localDay, streak, passages, scoreQuiz, dailyPassageIndex, textLengthGroup, validSpeed } from './reading.js';
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -28,33 +29,71 @@ function renderStats() {
   if (!sessions.length) { const p = document.createElement('p'); p.className = 'muted'; p.textContent = 'Sua jornada começa com uma sessão. Conclua uma prática para ver seu progresso aqui.'; history.append(p); }
   [...sessions].reverse().slice(0, 30).forEach(s => {
     const row = document.createElement('div'); row.className = 'history-row';
-    const title = document.createElement('div'); title.textContent = translatedTitles[s.title] || s.title; const date = document.createElement('small'); date.textContent = `${s.day.split('-').reverse().join('/')} · ${s.mode === 'paced' ? 'Leitura guiada' : 'Leitura em blocos'}`; title.append(date); row.append(title);
+    const title = document.createElement('div'); title.textContent = translatedTitles[s.title] || s.title; const date = document.createElement('small'); date.textContent = `${s.day.split('-').reverse().join('/')} · ${({ paced: 'Leitura guiada', chunk: 'Leitura em blocos', flash: 'Palavras inteiras', pairs: 'Palavras parecidas' })[s.mode] || 'Leitura em blocos'}`; title.append(date); row.append(title);
     const comprehension = Number.isInteger(s.totalQuestions) && s.totalQuestions > 0 ? `Compreensão: ${s.score}/${s.totalQuestions} acertos` : s.correct === null ? 'Reflexão concluída' : s.correct ? 'Compreensão: correta' : 'Compreensão: revisar';
-    for (const value of [`${s.wpm} PPM`, `${s.size} palavras / bloco`, comprehension]) { const cell = document.createElement('span'); cell.textContent = value; row.append(cell); }
+    const visual = s.mode === 'flash' || s.mode === 'pairs';
+    for (const value of visual ? [`${s.exposure} ms / ${s.mode === 'flash' ? 'palavra' : 'par'}`, s.mode === 'flash' ? `${s.syllables} sílabas` : '30 pares', 'Prática visual concluída'] : [`${s.wpm} PPM`, `${s.size} palavras / bloco`, comprehension]) { const cell = document.createElement('span'); cell.textContent = value; row.append(cell); }
     history.append(row);
   });
 }
 function switchView(view) {
   if (status === 'running') pause();
+  setReadingFocus(false);
+  document.body.classList.toggle('guided-view', view === 'practice' && mode === 'paced');
   $$('.view').forEach(el => el.hidden = el.id !== `${view}-view`);
   $$('.nav').forEach(el => el.classList.toggle('active', el.dataset.view === view));
   if (view === 'progress') renderStats();
 }
 $$('.nav').forEach(button => button.addEventListener('click', () => switchView(button.dataset.view)));
-function lockSettings(locked) { $('#speed').disabled = locked; $$('[data-chunk], [data-mode]').forEach(b => b.disabled = locked); }
+const isVisual = () => mode === 'flash' || mode === 'pairs';
+const exposureTime = () => isVisual() ? Number($('#exposure').value) : duration(groups[index], wpm);
+function setReadingFocus(focused) {
+  document.body.classList.toggle('reading-focus', focused);
+  $('#exit-focus').hidden = !focused;
+}
 function reset() {
+  setReadingFocus(false);
+  document.body.classList.toggle('guided-view', mode === 'paced' && !$('#practice-view').hidden);
   clearTimeout(timer); status = 'ready'; index = 0; elapsed = 0; remaining = 0;
-  groups = chunks(passage.text, size); lockSettings(false);
+  groups = isVisual() ? randomSequence(mode === 'flash' ? syllableWords[$('#syllables').value].map(word => word.replaceAll('-', '')) : wordPairs, mode === 'flash' ? 90 : 30) : chunks(passage.text, size);
+  $('#reading-settings').hidden = isVisual(); $('#visual-settings').hidden = !isVisual();
+  $('#syllable-setting').hidden = mode !== 'flash'; $('#pair-setting').hidden = mode !== 'pairs';
+  $('#exposure-unit').textContent = mode === 'pairs' ? 'par' : 'palavra';
+  $('#word-display').classList.toggle('flash-word', mode === 'flash');
+  $('#word-display').classList.toggle('word-pair', mode === 'pairs');
+  $('#word-display').setAttribute('aria-label', isVisual() ? 'Exercício de percepção de palavras' : 'Texto da leitura');
   $('#start').innerHTML = 'Iniciar prática <span>→</span>'; $('#reset').hidden = true;
   $('#reading-state').textContent = 'COMECE NO SEU TEMPO'; $('#read-fill').style.width = '0%';
   $('#reader-hint').textContent = mode === 'chunk' ? 'Mantenha o olhar no centro' : 'Acompanhe o bloco de palavras em destaque';
   $('#passage-label').textContent = passage.category.toUpperCase();
   $('#session-length').textContent = `◷ Cerca de ${Math.max(1, Math.ceil(wordCount(passage.text) / wpm))} min · ${passage.questions?.length ? `${passage.questions.length} perguntas ao final` : 'Reflexão ao final'}`;
   $('#reader').classList.toggle('paced', mode === 'paced');
-  if (mode === 'chunk') $('#word-display').textContent = 'Um pequeno passo';
+  if (isVisual()) {
+    $('#reader-hint').textContent = mode === 'flash' ? 'Fixe o olhar na letra vermelha e perceba a palavra inteira' : 'Olhe para o ponto central, sem mover os olhos para as palavras';
+    $('#passage-label').textContent = mode === 'flash' ? `${$('#syllables').value} SÍLABAS` : 'PERCEPÇÃO DE FORMAS';
+    $('#session-length').textContent = `${groups.length} ${mode === 'flash' ? 'palavras' : 'pares'} · ${Math.round(groups.length * exposureTime() / 1000)} s · Sem questionário`;
+    renderVisual(mode === 'flash' ? groups[0] : ['rei', 'lei']);
+  } else if (mode === 'chunk') $('#word-display').textContent = 'Um pequeno passo';
   else { $('#word-display').replaceChildren(...groups.map(group => { const span = document.createElement('span'); span.textContent = group + ' '; return span; })); $('#word-display').scrollTop = 0; }
 }
+function renderVisual(item) {
+  const display = $('#word-display');
+  display.replaceChildren();
+  const parts = mode === 'flash' ? splitFocus(item) : [item[0], '·', item[1]];
+  parts.forEach((part, i) => {
+    const span = document.createElement('span'); span.textContent = part;
+    span.className = i === 1 ? 'visual-focus' : i === 0 ? 'visual-left' : 'visual-right';
+    if (mode === 'pairs' && i === 1) span.setAttribute('aria-hidden', 'true');
+    display.append(span);
+  });
+}
 function showChunk() {
+  if (isVisual()) {
+    renderVisual(groups[index]);
+    $('#read-fill').style.width = `${index / groups.length * 100}%`;
+    $('#reading-state').textContent = `${index + 1} / ${groups.length} ${mode === 'flash' ? 'PALAVRAS' : 'PARES'}`;
+    return;
+  }
   if (mode === 'chunk') $('#word-display').textContent = groups[index];
   else {
     const spans = [...$('#word-display').children];
@@ -67,13 +106,15 @@ function showChunk() {
 }
 function schedule(ms) {
   deadline = performance.now() + ms;
-  timer = setTimeout(() => { index++; if (index >= groups.length) finish(); else { showChunk(); schedule(duration(groups[index], wpm)); } }, ms);
+  timer = setTimeout(() => { index++; if (index >= groups.length) finish(); else { showChunk(); schedule(exposureTime()); } }, ms);
 }
 function start() {
   if (status === 'running') { pause(); return; }
+  if (status === 'complete') reset();
   const resuming = status === 'paused'; status = 'running'; startedAt = performance.now();
-  lockSettings(true); $('#reset').hidden = false; $('#start').textContent = 'Pausar Ⅱ'; $('#reader-hint').textContent = 'Espaço para pausar · Respire e acompanhe o ritmo';
-  showChunk(); schedule(resuming ? remaining : duration(groups[index], wpm));
+  setReadingFocus(mode === 'paced');
+  $('#reset').hidden = false; $('#start').textContent = 'Pausar Ⅱ'; $('#reader-hint').textContent = isVisual() ? (mode === 'flash' ? 'Olhe para a letra vermelha · Espaço para pausar' : 'Mantenha o olhar no ponto central · Espaço para pausar') : 'Espaço para pausar · Respire e acompanhe o ritmo';
+  showChunk(); schedule(resuming ? remaining : exposureTime());
 }
 function pause() {
   if (status !== 'running') return;
@@ -81,6 +122,17 @@ function pause() {
   $('#start').textContent = 'Continuar →'; $('#reading-state').textContent = 'EM PAUSA'; $('#reader-hint').textContent = 'Sem pressa. Continue quando quiser.';
 }
 function finish() {
+  if (isVisual()) {
+    elapsed += performance.now() - startedAt; status = 'complete';
+    sessions.push({ day: localDay(), title: mode === 'flash' ? 'Palavras inteiras' : 'Palavras parecidas', wpm, size, mode, seconds: elapsed / 1000, correct: null, exposure: Number($('#exposure').value), syllables: Number($('#syllables').value) });
+    try { localStorage.setItem('stride-sessions', JSON.stringify(sessions)); } catch { toast('Prática concluída. Progresso mantido apenas nesta visita.'); }
+    renderStats();
+    $('#read-fill').style.width = '100%'; $('#reading-state').textContent = 'PRÁTICA CONCLUÍDA';
+    $('#word-display').replaceChildren();
+    $('#reader-hint').textContent = 'Sessão concluída! Ajuste o tempo para um ritmo confortável.';
+    $('#start').textContent = 'Praticar novamente →';
+    return;
+  }
   elapsed += performance.now() - startedAt; status = 'quiz'; $('#read-fill').style.width = '100%'; $('#reading-state').textContent = 'LEITURA CONCLUÍDA'; $('#start').disabled = true;
   answered = false; $('#quiz-feedback').textContent = ''; $('#quiz-submit').textContent = passage.questions?.length ? 'Verificar respostas →' : 'Salvar prática →';
   $('#quiz-question').textContent = passage.questions?.length ? `Responda às ${passage.questions.length} perguntas sobre “${passage.title}”.` : 'Sem consultar o texto, resuma a ideia principal com suas próprias palavras.';
@@ -128,6 +180,12 @@ $('#quiz-form').addEventListener('submit', event => {
 });
 $('#start').addEventListener('click', start);
 $('#reset').addEventListener('click', reset);
+$('#exit-focus').addEventListener('click', () => { pause(); setReadingFocus(false); $('#start').focus(); });
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && document.body.classList.contains('reading-focus') && !$('#quiz').open) {
+    pause(); setReadingFocus(false); $('#start').focus();
+  }
+});
 $('#speed').addEventListener('input', event => {
   wpm = validSpeed(event.target.value); $('#speed-value').textContent = wpm;
   $('#current-speed').innerHTML = `${wpm} <small>PPM</small>`;
@@ -139,9 +197,15 @@ $$('[data-mode]').forEach(button => button.addEventListener('click', () => {
   mode = button.dataset.mode; $$('[data-mode]').forEach(b => { b.classList.toggle('selected', b === button); b.setAttribute('aria-selected', String(b === button)); });
   $('#exercise-label').textContent = mode === 'chunk' ? 'AMPLIE SEU CAMPO DE LEITURA' : 'MANTENHA UM RITMO CONSTANTE';
   $('#exercise-title').textContent = mode === 'chunk' ? 'Leia várias palavras de uma vez.' : 'Deixe o ritmo guiar sua atenção.';
-  $('#exercise-description').textContent = mode === 'chunk' ? 'Relaxe o olhar e perceba cada bloco como uma ideia.' : 'Acompanhe cada bloco em destaque ao longo do texto.'; reset();
+  $('#exercise-description').textContent = mode === 'chunk' ? 'Relaxe o olhar e perceba cada bloco como uma ideia.' : 'Acompanhe cada bloco em destaque ao longo do texto.';
+  if (isVisual()) {
+    $('#exercise-label').textContent = mode === 'flash' ? 'RECONHEÇA A PALAVRA INTEIRA' : 'OBSERVE AS DIFERENÇAS';
+    $('#exercise-title').textContent = mode === 'flash' ? 'Uma palavra. Um olhar.' : 'Duas palavras, um ponto de foco.';
+    $('#exercise-description').textContent = mode === 'flash' ? 'Palavras aleatórias de 2, 3 ou 4 sílabas. Fixe o olhar na letra vermelha e tente reconhecer a palavra inteira, sem separar as sílabas.' : 'Olhe para o ponto entre as palavras e tente perceber as diferenças nas formas sem olhar diretamente para elas.';
+  }
+  reset();
 }));
-document.addEventListener('keydown', event => { if (event.code === 'Space' && !['INPUT', 'TEXTAREA', 'BUTTON'].includes(event.target.tagName) && !$('#quiz').open && !$('#practice-view').hidden) { event.preventDefault(); start(); } });
+document.addEventListener('keydown', event => { if (event.code === 'Space' && !['INPUT', 'TEXTAREA', 'BUTTON', 'SELECT'].includes(event.target.tagName) && !$('#quiz').open && !$('#practice-view').hidden) { event.preventDefault(); start(); } });
 document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
 for (const item of passages) {
   const card = document.createElement('article'); card.className = 'library-card';
@@ -149,7 +213,7 @@ for (const item of passages) {
   const category = document.createElement('span'); category.className = 'eyebrow'; category.textContent = item.category.toUpperCase();
   const title = document.createElement('h3'); title.textContent = item.title;
   const info = document.createElement('p'); info.textContent = `${wordCount(item.text)} palavras · ${item.questions.length} perguntas`;
-  const button = document.createElement('button'); button.className = 'primary'; button.textContent = 'Ler este texto →'; button.addEventListener('click', () => { passage = item; reset(); switchView('practice'); toast(`Texto selecionado: ${item.title}`); });
+  const button = document.createElement('button'); button.className = 'primary'; button.textContent = 'Ler este texto →'; button.addEventListener('click', () => { passage = item; if (isVisual()) $('[data-mode="chunk"]').click(); reset(); switchView('practice'); toast(`Texto selecionado: ${item.title}`); });
   card.append(category, title, info, button); $('#library-cards').append(card);
 }
 function filterLibrary() {
@@ -166,6 +230,9 @@ $('#custom-text').addEventListener('input', event => { $('#custom-count').textCo
 $('#use-custom').addEventListener('click', () => {
   const text = $('#custom-text').value.trim(), count = wordCount(text);
   if (count < 20 || count > 3000) { $('#custom-error').textContent = 'Insira um texto de 20 a 3.000 palavras.'; return; }
-  passage = { title: 'Seu próprio texto', category: 'Leitura pessoal', text }; reset(); switchView('practice'); toast('Seu texto está pronto.');
+  passage = { title: 'Seu próprio texto', category: 'Leitura pessoal', text }; if (isVisual()) $('[data-mode="chunk"]').click(); reset(); switchView('practice'); toast('Seu texto está pronto.');
 });
+$('#exposure').addEventListener('input', () => { $('#exposure-value').textContent = $('#exposure').value; reset(); });
+$('#syllables').addEventListener('change', reset);
+$('#pair-gap').addEventListener('input', () => { $('#word-display').style.setProperty('--pair-gap', `${$('#pair-gap').value}px`); reset(); });
 renderStats(); reset();

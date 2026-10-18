@@ -46,3 +46,46 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 @media(max-width:1150px){:root{--sidebar-width:195px}main{margin:0 auto}}
 @media(max-width:900px){:root{--sidebar-width:175px}main{margin:0 auto}}
 @media(max-width:600px){:root{--sidebar-width:0px}main{margin:0 auto}}
+
+/* Give guided reading a quiet, tall page and an immersive practice view. */
+.guided-view header,.guided-view #practice-view>.page-heading,.guided-view #practice-view>.stats,.guided-view .section-title,.guided-view .right-column,.guided-view .tip,.guided-view main>footer{display:none}
+.guided-view .workspace-grid{grid-template-columns:minmax(0,1fr);padding-top:24px}
+.guided-view .training{width:100%;max-width:980px;margin:0 auto;min-width:0}
+.guided-view .exercise-top{padding:16px 24px}
+.guided-view .exercise-top .eyebrow,.guided-view .exercise-top p,.guided-view .exercise-symbol{display:none}
+.guided-view .exercise-top h3{margin:0}
+.paced .reading-content{margin:20px auto;min-height:0;width:100%;max-width:76ch;padding:0 28px}
+.paced #word-display{height:60vh;height:60dvh;max-height:none;font-size:20px;line-height:2.1;padding:12px 8px;overflow-y:auto;overscroll-behavior:contain}
+.paced .reader-hint{margin-bottom:16px}
+body.reading-focus{padding:0;overflow:hidden}
+.reading-focus .sidebar,.reading-focus .mode-tabs,.reading-focus .exercise-top,.reading-focus .settings,.reading-focus .reader-meta,.reading-focus .reader-hint,.reading-focus #session-length,.reading-focus #toast{display:none}
+.reading-focus main{padding:0;max-width:none}
+.reading-focus .workspace-grid{padding:0;display:block}
+.reading-focus .training{max-width:none}
+.reading-focus .exercise-card{margin:0;border:0;border-radius:0;height:100vh;height:100dvh;display:flex;flex-direction:column;background:#141e18}
+.reading-focus .reader{flex:1;min-height:0;margin:0;border:0;border-radius:0;display:flex;flex-direction:column}
+.reading-focus .reading-content{flex:1;min-height:0;margin:0 auto;padding:clamp(16px,4vh,48px) 28px}
+.reading-focus #word-display{height:100%;min-height:0;max-height:100%;font-size:clamp(20px,2vw,24px);line-height:2.2}
+.reading-focus .read-track{flex-shrink:0;height:2px;opacity:.6}
+.reading-focus .exercise-footer{flex-shrink:0;justify-content:center;padding:12px 20px;padding-bottom:max(12px,env(safe-area-inset-bottom));background:#141e18}
+.reading-focus .controls{justify-content:center;flex-wrap:wrap}
+@media(max-width:600px){
+  .guided-view .workspace-grid{padding-top:16px}
+  .paced .reading-content{padding:0 10px}
+  .paced #word-display{font-size:18px}
+  .reading-focus .reading-content{padding:16px 12px}
+  .reading-focus .exercise-footer{flex-direction:row}
+  .reading-focus .controls .primary{flex:initial}
+}
+
+/* Visual word exercises keep their anchor fixed as word lengths change. */
+.mode-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+#visual-settings select{display:block;margin:12px 0;padding:9px 12px;background:#152019;color:#d8edcf;border:1px solid var(--line);border-radius:6px;font:inherit}
+#visual-settings .setting-note{display:block;line-height:1.6;margin-top:10px}
+#word-display.flash-word,#word-display.word-pair{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;width:100%;font-family:monospace;font-size:clamp(20px,3vw,32px);letter-spacing:0;white-space:nowrap}
+.visual-left{text-align:right}.visual-right{text-align:left}
+.flash-word .visual-focus{color:#ff7373;font-weight:700}
+.word-pair .visual-focus{color:#c4dab8;font-size:32px;width:var(--pair-gap,48px);text-align:center}
+@media(max-width:600px){#word-display.flash-word,#word-display.word-pair{font-size:20px}.word-pair .visual-focus{width:min(var(--pair-gap,48px),64px)}}
+
+.exposure-label{font-weight:inherit}
