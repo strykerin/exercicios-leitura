@@ -42,6 +42,56 @@ export const wordPairs = [
   ['linha', 'vinha'], ['sonho', 'sono'], ['porta', 'posta'], ['pasta', 'pista'], ['sala', 'selo'],
   ['mato', 'mito'], ['roda', 'rosa'], ['mar', 'par'], ['dia', 'tia'], ['cola', 'gola']
 ];
+// Cada par usa a mesma quantidade de sílabas; as divisões facilitam a revisão.
+export const syllablePairs = {
+  3: [
+    ['ca-ne-ta', 'ca-ne-ca'], ['ja-ne-la', 'pa-ne-la'], ['sa-pa-to', 'sa-pa-ta'],
+    ['ca-mi-sa', 'ca-mi-nha'], ['bo-ne-ca', 'bo-ne-co'], ['ca-va-lo', 'ca-va-do'],
+    ['ma-ca-co', 'ma-ca-ca'], ['me-ni-no', 'me-ni-na'], ['a-mi-go', 'a-mi-ga'],
+    ['es-co-la', 'es-co-va'], ['es-ca-da', 'es-pa-da'], ['ta-pe-te', 'to-pe-te'],
+    ['sa-la-da', 'sa-la-do'], ['ca-be-ça', 'ca-be-ço'], ['co-mi-da', 'co-mi-do'],
+    ['a-lu-no', 'a-lu-na'], ['a-pi-to', 'a-pi-ta'], ['ba-ra-ta', 'ba-ra-to'],
+    ['ba-ti-da', 'ba-ti-do'], ['be-bi-da', 'be-bi-do'], ['ca-sa-co', 'ca-sa-do'],
+    ['ca-ne-la', 'ca-pe-la'], ['ca-dei-ra', 'ca-dei-a'], ['co-lu-na', 'co-li-na'],
+    ['co-zi-nha', 'co-zi-do'], ['de-se-nho', 'de-se-jo'], ['di-nhei-ro', 'pi-nhei-ro'],
+    ['fe-cha-do', 'fe-cha-da'], ['fei-ti-ço', 'fei-ti-o'], ['ma-dei-ra', 'ma-nei-ra']
+  ],
+  4: [
+    ['a-ba-ca-te', 'a-ba-ca-xi'], ['ca-mi-se-ta', 'ca-mi-sei-ro'], ['sa-bo-ne-te', 'sa-bo-nei-ra'],
+    ['ge-la-dei-ra', 'ge-la-dei-ro'], ['pro-fes-so-ra', 'pro-fes-so-res'], ['pas-sa-ri-nho', 'pas-sa-di-nho'],
+    ['ca-ra-me-lo', 'co-gu-me-lo'], ['co-lo-ri-do', 'co-lo-ri-da'], ['a-li-men-to', 'a-li-men-ta'],
+    ['mo-vi-men-to', 'mo-vi-men-ta'], ['a-pa-re-lho', 'a-pa-re-lha'], ['a-ven-tu-ra', 'a-ven-tu-ro'],
+    ['o-fi-ci-na', 'o-fi-ci-nas'], ['a-ma-re-lo', 'a-ma-re-la'], ['a-que-ci-do', 'a-que-ci-da'],
+    ['a-ca-ba-do', 'a-ca-ta-do'], ['a-ce-le-ra', 'a-ce-le-ro'], ['a-do-ra-do', 'a-do-ta-do'],
+    ['a-gi-ta-do', 'a-gi-ta-da'], ['a-li-ca-te', 'a-li-cer-ce'], ['a-lu-ga-do', 'a-la-ga-do'],
+    ['a-ni-ma-do', 'a-ni-nha-do'], ['a-no-ta-do', 'a-do-ta-do'], ['a-pa-ga-do', 'a-pe-ga-do'],
+    ['a-pe-li-do', 'a-pe-la-do'], ['as-si-na-do', 'as-si-na-da'], ['a-ten-di-do', 'a-ten-ti-vo'],
+    ['a-tra-sa-do', 'a-tra-ca-do'], ['a-vi-sa-do', 'a-li-sa-do'], ['co-ra-jo-so', 'co-ra-jo-sa']
+  ],
+  5: [
+    ['a-pre-sen-ta-ção', 'a-pre-sen-ta-dor'], ['a-po-sen-ta-do', 'a-po-sen-ta-da'],
+    ['a-pro-vei-ta-do', 'a-pro-vei-ta-da'], ['a-com-pa-nha-do', 'a-com-pa-nha-da'],
+    ['a-cos-tu-ma-do', 'a-cos-tu-ma-da'], ['a-ma-du-re-ce', 'a-ma-du-re-ço'],
+    ['a-ma-re-la-do', 'a-ma-re-la-da'], ['a-pa-vo-ra-do', 'a-pa-vo-ra-da'],
+    ['a-per-ta-di-nho', 'a-per-ta-di-nha'], ['co-mu-ni-ca-ção', 'co-mu-ni-ca-dor'],
+    ['co-mu-ni-ca-do', 'co-mu-ni-ca-da'], ['lo-ca-li-za-do', 'lo-ca-li-za-da'],
+    ['con-si-de-ra-do', 'con-si-de-ra-da'], ['con-ta-mi-na-do', 'con-ta-mi-na-da'],
+    ['de-li-ca-de-za', 'de-li-ca-de-zas'], ['de-sa-fi-a-do', 'de-sa-fi-a-da'],
+    ['de-sa-pa-re-ce', 'de-sa-pa-re-ça'], ['de-sen-vol-vi-do', 'de-sen-vol-vi-da'],
+    ['de-ter-mi-na-do', 'de-ter-mi-na-da'], ['di-fe-ren-ci-a', 'di-fe-ren-ci-o'],
+    ['e-du-ca-ti-vo', 'e-du-ca-ti-va'], ['e-la-bo-ra-do', 'e-la-bo-ra-da'],
+    ['e-xa-ge-ra-do', 'e-xa-ge-ra-da'], ['ex-pe-ri-men-to', 'ex-pe-ri-men-ta'],
+    ['i-lu-mi-na-do', 'i-lu-mi-na-da'], ['i-ma-gi-na-ção', 'i-ma-gi-na-ções'],
+    ['i-ma-gi-na-do', 'i-ma-gi-na-da'], ['or-ga-ni-za-do', 'or-ga-ni-za-da'],
+    ['par-ti-ci-pa-ção', 'par-ti-ci-pa-ções'], ['re-cu-pe-ra-do', 're-cu-pe-ra-da']
+  ]
+};
+export const wordPairLevels = {
+  short: wordPairs,
+  ...Object.fromEntries(Object.entries(syllablePairs).map(([count, pairs]) => [
+    count, pairs.map(pair => pair.map(word => word.replaceAll('-', '')))
+  ]))
+};
 export function randomSequence(pool, count = 30, random = Math.random) {
   if (!pool.length) return [];
   const result = [];

@@ -1,4 +1,4 @@
-import { syllableWords, wordPairs, randomSequence, splitFocus, splitBlockFocus } from './visual-exercises.js';
+import { syllableWords, wordPairLevels, randomSequence, splitFocus, splitBlockFocus } from './visual-exercises.js';
 import { setupWordSearch } from './word-search.js';
 import { chunks, wordCount, duration, passages, scoreQuiz, dailyPassageIndex, textLengthGroup, validSpeed } from './reading.js';
 const $ = selector => document.querySelector(selector);
@@ -35,9 +35,12 @@ function reset() {
     $('#reading-settings').hidden = true; $('#visual-settings').hidden = true;
     return;
   }
-  groups = isVisual() ? randomSequence(mode === 'flash' ? syllableWords[$('#syllables').value].map(word => word.replaceAll('-', '')) : wordPairs, mode === 'flash' ? 90 : 30) : chunks(passage.text, size);
+  groups = isVisual() ? randomSequence(mode === 'flash' ? syllableWords[$('#syllables').value].map(word => word.replaceAll('-', '')) : wordPairLevels[$('#pair-syllables').value], mode === 'flash' ? 90 : 30) : chunks(passage.text, size);
   $('#reading-settings').hidden = isVisual(); $('#visual-settings').hidden = !isVisual();
+  $('#visual-settings').classList.toggle('pair-settings', mode === 'pairs');
+  $('#word-display').style.removeProperty('font-size');
   $('#syllable-setting').hidden = mode !== 'flash'; $('#pair-setting').hidden = mode !== 'pairs';
+  $('#pair-syllable-setting').hidden = mode !== 'pairs';
   $('#exposure-unit').textContent = mode === 'pairs' ? 'par' : 'palavra';
   $('#word-display').classList.toggle('flash-word', mode === 'flash');
   $('#word-display').classList.toggle('word-pair', mode === 'pairs');
@@ -50,9 +53,9 @@ function reset() {
   $('#reader').classList.toggle('paced', mode === 'paced');
   if (isVisual()) {
     $('#reader-hint').textContent = mode === 'flash' ? 'Fixe o olhar na letra vermelha e perceba a palavra inteira' : 'Olhe para o ponto central, sem mover os olhos para as palavras';
-    $('#passage-label').textContent = mode === 'flash' ? `${$('#syllables').value} SÍLABAS` : 'PERCEPÇÃO DE FORMAS';
+    $('#passage-label').textContent = mode === 'flash' ? `${$('#syllables').value} SÍLABAS` : `PERCEPÇÃO DE FORMAS · ${$('#pair-syllables').value === 'short' ? '1–2' : $('#pair-syllables').value} SÍLABAS`;
     $('#session-length').textContent = `${groups.length} ${mode === 'flash' ? 'palavras' : 'pares'} · ${Math.round(groups.length * exposureTime() / 1000)} s · Sem questionário`;
-    renderVisual(mode === 'flash' ? groups[0] : ['rei', 'lei']);
+    renderVisual(groups[0]);
   } else if (mode === 'chunk') renderBlock('Um pequeno passo');
   else { $('#word-display').replaceChildren(...groups.map(group => { const span = document.createElement('span'); span.textContent = group + ' '; return span; })); $('#word-display').scrollTop = 0; }
 }
@@ -72,7 +75,26 @@ function renderVisual(item) {
     if (mode === 'pairs' && i === 1) span.setAttribute('aria-hidden', 'true');
     display.append(span);
   });
+  fitWordPairs();
 }
+function fitWordPairs() {
+  const display = $('#word-display');
+  display.style.removeProperty('font-size');
+  if (mode !== 'pairs' || !display.children.length || !display.clientWidth) return;
+  const available = (display.clientWidth - display.children[1].getBoundingClientRect().width) / 2;
+  const fontSize = parseFloat(getComputedStyle(display).fontSize);
+  // Size for the longest word in the round so the text stays steady between pairs.
+  const context = document.createElement('canvas').getContext('2d');
+  context.font = getComputedStyle(display).font;
+  const widest = Math.max(...groups.flat().map(word => context.measureText(word).width));
+  if (widest > available) display.style.fontSize = `${Math.max(1, Math.floor(fontSize * available / widest))}px`;
+}
+let pairDisplayWidth = 0;
+new ResizeObserver(([entry]) => {
+  if (entry.contentRect.width === pairDisplayWidth) return;
+  pairDisplayWidth = entry.contentRect.width;
+  fitWordPairs();
+}).observe($('#word-display'));
 function showChunk() {
   if (isVisual()) {
     renderVisual(groups[index]);
@@ -243,6 +265,7 @@ $('#use-custom').addEventListener('click', () => {
 });
 $('#exposure').addEventListener('input', () => { $('#exposure-value').textContent = $('#exposure').value; reset(); });
 $('#syllables').addEventListener('change', reset);
+$('#pair-syllables').addEventListener('change', reset);
 $('#pair-gap').addEventListener('input', () => { $('#word-display').style.setProperty('--pair-gap', `${$('#pair-gap').value}px`); reset(); });
 setupWordSearch();
 reset();
