@@ -9,14 +9,6 @@ try { wpm = validSpeed(localStorage.getItem('stride-speed'), wpm); } catch { /* 
 $('#speed').value = wpm;
 $('#speed-value').textContent = wpm;
 function toast(message) { $('#toast').textContent = message; $('#toast').hidden = false; setTimeout(() => $('#toast').hidden = true, 4000); }
-function switchView(view) {
-  if (status === 'running') pause();
-  setReadingFocus(false);
-  document.body.classList.toggle('guided-view', view === 'practice' && mode === 'paced');
-  $$('.view').forEach(el => el.hidden = el.id !== `${view}-view`);
-  $$('.nav').forEach(el => el.classList.toggle('active', el.dataset.view === view));
-}
-$$('.nav').forEach(button => button.addEventListener('click', () => switchView(button.dataset.view)));
 const isVisual = () => mode === 'flash' || mode === 'pairs';
 const exposureTime = () => isVisual() ? Number($('#exposure').value) : duration(groups[index], wpm);
 function setReadingFocus(focused) {
@@ -28,6 +20,14 @@ function reset() {
   document.body.classList.toggle('guided-view', mode === 'paced' && !$('#practice-view').hidden);
   clearTimeout(timer); status = 'ready'; index = 0; remaining = 0;
   $('#start').disabled = false;
+  $('#text-picker').hidden = mode !== 'chunk' && mode !== 'paced';
+  $('#selected-text-title').textContent = passage.title;
+  $('#selected-text-info').textContent = `${wordCount(passage.text)} palavras · ${passage.questions?.length ? `${passage.questions.length} perguntas` : 'Reflexão ao final'}`;
+  $$('.library-card button').forEach((button, i) => {
+    const selected = passages[i] === passage;
+    button.textContent = selected ? 'Selecionado ✓' : 'Selecionar texto →';
+    button.setAttribute('aria-pressed', String(selected));
+  });
   $('#word-search').hidden = mode !== 'search';
   $('#reader').hidden = mode === 'search';
   $('.exercise-footer').hidden = mode === 'search';
@@ -99,6 +99,7 @@ function start() {
   if (status === 'running') { pause(); return; }
   if (status === 'complete') reset();
   const resuming = status === 'paused'; status = 'running';
+  $('#text-picker').open = false;
   setReadingFocus(mode === 'paced');
   $('#reset').hidden = false; $('#start').textContent = 'Pausar Ⅱ'; $('#reader-hint').textContent = isVisual() ? (mode === 'flash' ? 'Olhe para a letra vermelha · Espaço para pausar' : 'Mantenha o olhar no ponto central · Espaço para pausar') : 'Espaço para pausar · Respire e acompanhe o ritmo';
   showChunk(); schedule(resuming ? remaining : exposureTime());
@@ -118,6 +119,7 @@ function finish() {
     return;
   }
   status = 'quiz'; $('#read-fill').style.width = '100%'; $('#reading-state').textContent = 'LEITURA CONCLUÍDA'; $('#start').disabled = true;
+  $('#quiz-title').textContent = 'O que você compreendeu?';
   answered = false; $('#quiz-feedback').textContent = ''; $('#quiz-submit').textContent = passage.questions?.length ? 'Verificar respostas →' : 'Concluir prática →';
   $('#quiz-question').textContent = passage.questions?.length ? `Responda às ${passage.questions.length} perguntas sobre “${passage.title}”.` : 'Sem consultar o texto, resuma a ideia principal com suas próprias palavras.';
   $('#quiz-options').replaceChildren();
@@ -130,12 +132,14 @@ function finish() {
   });
   else { const input = document.createElement('textarea'); input.id = 'reflection'; input.required = true; input.minLength = 10; input.placeholder = 'A ideia principal era…'; input.setAttribute('aria-label', 'Seu resumo'); $('#quiz-options').append(input); }
   $('#quiz').showModal();
+  $('#quiz-body').scrollTop = 0;
 }
 function dismissQuiz() {
   $('#quiz').close();
   reset();
   $('#start').focus();
 }
+$('#quiz-close').addEventListener('click', dismissQuiz);
 $('#quiz').addEventListener('cancel', event => {
   event.preventDefault();
   dismissQuiz();
@@ -170,6 +174,9 @@ $('#quiz-form').addEventListener('submit', event => {
   $('#quiz-feedback').textContent = correct === null ? 'Prática concluída. Reflita sobre o que você compreendeu antes de aumentar o ritmo.' : `Você acertou ${score} de ${questions.length} perguntas (${Math.round(score / questions.length * 100)}%). Prática concluída. ${correct ? 'Quando esse ritmo ficar confortável, experimente mais uma palavra por bloco.' : 'Revise as explicações e experimente diminuir a velocidade na próxima sessão.'}`;
   $$('#quiz-options input, #quiz-options textarea').forEach(input => input.disabled = true);
   $('#quiz-submit').textContent = 'Voltar à prática →';
+  $('#quiz-title').textContent = 'Resultado da prática';
+  $('#quiz-body').scrollTop = 0;
+  $('#quiz-submit').focus({ preventScroll: true });
 });
 $('#start').addEventListener('click', start);
 $('#reset').addEventListener('click', reset);
@@ -199,15 +206,23 @@ $$('[data-mode]').forEach(button => button.addEventListener('click', () => {
   }
   reset();
 }));
-document.addEventListener('keydown', event => { if (mode !== 'search' && event.code === 'Space' && !['INPUT', 'TEXTAREA', 'BUTTON', 'SELECT'].includes(event.target.tagName) && !$('#quiz').open && !$('#practice-view').hidden) { event.preventDefault(); start(); } });
+document.addEventListener('keydown', event => { if (mode !== 'search' && event.code === 'Space' && !['INPUT', 'TEXTAREA', 'BUTTON', 'SELECT', 'SUMMARY'].includes(event.target.tagName) && !$('#quiz').open && !$('#practice-view').hidden) { event.preventDefault(); start(); } });
 document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+$('#text-picker').addEventListener('toggle', () => { if ($('#text-picker').open) pause(); });
+function selectPassage(item) {
+  passage = item;
+  $('#text-picker').open = false;
+  reset();
+  $('#text-picker summary').focus();
+  toast(`Texto selecionado: ${item.title}`);
+}
 for (const item of passages) {
   const card = document.createElement('article'); card.className = 'library-card';
   card.dataset.length = textLengthGroup(wordCount(item.text));
   const category = document.createElement('span'); category.className = 'eyebrow'; category.textContent = item.category.toUpperCase();
   const title = document.createElement('h3'); title.textContent = item.title;
   const info = document.createElement('p'); info.textContent = `${wordCount(item.text)} palavras · ${item.questions.length} perguntas`;
-  const button = document.createElement('button'); button.className = 'primary'; button.textContent = 'Ler este texto →'; button.addEventListener('click', () => { passage = item; if (isVisual() || mode === 'search') $('[data-mode="chunk"]').click(); reset(); switchView('practice'); toast(`Texto selecionado: ${item.title}`); });
+  const button = document.createElement('button'); button.className = 'primary'; button.textContent = 'Selecionar texto →'; button.addEventListener('click', () => selectPassage(item));
   card.append(category, title, info, button); $('#library-cards').append(card);
 }
 function filterLibrary() {
@@ -224,7 +239,7 @@ $('#custom-text').addEventListener('input', event => { $('#custom-count').textCo
 $('#use-custom').addEventListener('click', () => {
   const text = $('#custom-text').value.trim(), count = wordCount(text);
   if (count < 20 || count > 3000) { $('#custom-error').textContent = 'Insira um texto de 20 a 3.000 palavras.'; return; }
-  passage = { title: 'Seu próprio texto', category: 'Leitura pessoal', text }; if (isVisual() || mode === 'search') $('[data-mode="chunk"]').click(); reset(); switchView('practice'); toast('Seu texto está pronto.');
+  selectPassage({ title: 'Seu próprio texto', category: 'Leitura pessoal', text });
 });
 $('#exposure').addEventListener('input', () => { $('#exposure-value').textContent = $('#exposure').value; reset(); });
 $('#syllables').addEventListener('change', reset);

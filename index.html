@@ -2,12 +2,16 @@
 <html lang="pt-BR">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f6f5f1"><meta name="description" content="Exercícios de leitura em blocos, leitura guiada e percepção de palavras."><title>Leitura rápida — Stride</title><link rel="icon" type="image/svg+xml" href="./favicon.svg"><link rel="stylesheet" href="./style.css"></head>
 <body>
-<header class="site-header"><a class="brand" href="./" aria-label="Stride — início">stride<span>.</span></a><nav aria-label="Navegação principal"><button class="nav active" data-view="practice">Exercícios</button><button class="nav" data-view="library">Textos</button></nav><span class="header-note">Prática de leitura</span></header>
+<header class="site-header"><a class="brand" href="./" aria-label="Stride — início">stride<span>.</span></a><span class="header-note">Prática de leitura</span></header>
 <main>
   <section id="practice-view" class="view">
     <div class="page-heading"><h1>Exercícios de leitura</h1><p>Escolha um exercício e encontre um ritmo confortável.</p></div>
     <div class="workspace-grid"><div class="training">
       <div class="mode-tabs" role="tablist" aria-label="Modo de exercício"><button role="tab" aria-selected="true" class="selected" data-mode="chunk"><small>01</small><span>Leitura em blocos</span></button><button role="tab" aria-selected="false" data-mode="paced"><small>02</small><span>Leitura guiada</span></button><button role="tab" aria-selected="false" data-mode="flash"><small>03</small><span>Palavras inteiras</span></button><button role="tab" aria-selected="false" data-mode="pairs"><small>04</small><span>Palavras parecidas</span></button><button role="tab" aria-selected="false" data-mode="search"><small>05</small><span>Localizar palavras</span></button></div>
+      <details id="text-picker" class="text-picker">
+        <summary><span class="text-picker-summary"><span class="eyebrow">TEXTO PARA ESTA PRÁTICA</span><strong id="selected-text-title"></strong><span id="selected-text-info"></span></span><span class="text-picker-action">Trocar texto</span></summary>
+  <div class="text-picker-content"><p class="muted">Escolha uma leitura ou cole seu próprio texto. Sua escolha vale para leitura em blocos e leitura guiada.</p><div class="library-toolbar"><label for="length-filter">Tamanho do texto</label><select id="length-filter"><option value="all">Todos os tamanhos</option><option value="short">Curtos — até 249 palavras</option><option value="medium">Médios — 250 a 499 palavras</option><option value="long">Longos — 500 palavras ou mais</option></select><span id="library-count" role="status"></span></div><p id="library-empty" class="muted" hidden>Nenhum texto neste tamanho. Escolha outro filtro.</p><div id="library-cards" class="library-cards"></div><div class="panel custom-panel"><h2>Traga seu próprio texto</h2><label for="custom-text">Cole um texto de 20 a 3.000 palavras. Ao final, você fará uma reflexão sobre o que leu.</label><textarea id="custom-text" rows="6" placeholder="Uma história, um artigo, uma ideia que você quer explorar…"></textarea><div class="custom-footer"><span id="custom-count">0 palavras</span><button class="primary" id="use-custom">Usar meu texto →</button></div><p id="custom-error" role="alert"></p></div></div>
+      </details>
       <article class="exercise-card">
         <div class="exercise-top"><div><h2 id="exercise-title">Leia várias palavras de uma vez.</h2><p id="exercise-description">Relaxe o olhar e perceba cada bloco como uma ideia.</p></div></div>
         <section id="word-search" aria-label="Localizar palavras" hidden>
@@ -27,9 +31,13 @@
       </article>
     </div></div>
   </section>
-  <section id="library-view" class="view" hidden><div class="page-heading"><h1>Textos para praticar</h1><p>Escolha uma leitura ou cole seu próprio texto.</p></div><div class="library-toolbar"><label for="length-filter">Tamanho do texto</label><select id="length-filter"><option value="all">Todos os tamanhos</option><option value="short">Curtos — até 249 palavras</option><option value="medium">Médios — 250 a 499 palavras</option><option value="long">Longos — 500 palavras ou mais</option></select><span id="library-count" role="status"></span></div><p id="library-empty" class="muted" hidden>Nenhum texto neste tamanho. Escolha outro filtro.</p><div id="library-cards" class="library-cards"></div><div class="panel custom-panel"><h2>Traga seu próprio texto</h2><label for="custom-text">Cole um texto de 20 a 3.000 palavras. Ao final, você fará uma reflexão sobre o que leu.</label><textarea id="custom-text" rows="6" placeholder="Uma história, um artigo, uma ideia que você quer explorar…"></textarea><div class="custom-footer"><span id="custom-count">0 palavras</span><button class="primary" id="use-custom">Praticar este texto →</button></div><p id="custom-error" role="alert"></p></div></section>
+
 
 </main>
-<dialog id="quiz"><form id="quiz-form"><h2>O que você compreendeu?</h2><p id="quiz-question"></p><div id="quiz-options"></div><p id="quiz-feedback" aria-live="polite"></p><button class="primary" id="quiz-submit" type="submit">Verificar compreensão →</button></form></dialog>
+<dialog id="quiz" aria-labelledby="quiz-title"><form id="quiz-form">
+  <div class="quiz-header"><h2 id="quiz-title">O que você compreendeu?</h2><button id="quiz-close" class="secondary" type="button" aria-label="Fechar questionário e voltar à prática">Fechar ×</button></div>
+  <div class="quiz-body" id="quiz-body"><p id="quiz-question"></p><p id="quiz-feedback" aria-live="polite"></p><div id="quiz-options"></div></div>
+  <div class="quiz-footer"><button class="primary" id="quiz-submit" type="submit">Verificar compreensão →</button></div>
+</form></dialog>
 <div id="toast" role="status" hidden></div><script type="module" src="./app.js"></script>
 </body></html>
