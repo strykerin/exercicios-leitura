@@ -27,6 +27,7 @@ function reset() {
   setReadingFocus(false);
   document.body.classList.toggle('guided-view', mode === 'paced' && !$('#practice-view').hidden);
   clearTimeout(timer); status = 'ready'; index = 0; remaining = 0;
+  $('#start').disabled = false;
   $('#word-search').hidden = mode !== 'search';
   $('#reader').hidden = mode === 'search';
   $('.exercise-footer').hidden = mode === 'search';
@@ -130,10 +131,21 @@ function finish() {
   else { const input = document.createElement('textarea'); input.id = 'reflection'; input.required = true; input.minLength = 10; input.placeholder = 'A ideia principal era…'; input.setAttribute('aria-label', 'Seu resumo'); $('#quiz-options').append(input); }
   $('#quiz').showModal();
 }
-$('#quiz').addEventListener('cancel', event => event.preventDefault());
+function dismissQuiz() {
+  $('#quiz').close();
+  reset();
+  $('#start').focus();
+}
+$('#quiz').addEventListener('cancel', event => {
+  event.preventDefault();
+  dismissQuiz();
+});
+$('#quiz').addEventListener('close', () => {
+  if (status === 'quiz') dismissQuiz();
+});
 $('#quiz-form').addEventListener('submit', event => {
   event.preventDefault();
-  if (answered) { $('#quiz').close(); $('#start').disabled = false; reset(); return; }
+  if (answered) { dismissQuiz(); return; }
   if (!event.target.reportValidity()) return;
   const questions = passage.questions || [];
   const data = new FormData(event.target);
