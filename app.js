@@ -1,4 +1,5 @@
 import { syllableWords, wordPairs, randomSequence, splitFocus, splitBlockFocus } from './visual-exercises.js';
+import { setupWordSearch } from './word-search.js';
 import { chunks, wordCount, duration, passages, scoreQuiz, dailyPassageIndex, textLengthGroup, validSpeed } from './reading.js';
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -26,6 +27,13 @@ function reset() {
   setReadingFocus(false);
   document.body.classList.toggle('guided-view', mode === 'paced' && !$('#practice-view').hidden);
   clearTimeout(timer); status = 'ready'; index = 0; remaining = 0;
+  $('#word-search').hidden = mode !== 'search';
+  $('#reader').hidden = mode === 'search';
+  $('.exercise-footer').hidden = mode === 'search';
+  if (mode === 'search') {
+    $('#reading-settings').hidden = true; $('#visual-settings').hidden = true;
+    return;
+  }
   groups = isVisual() ? randomSequence(mode === 'flash' ? syllableWords[$('#syllables').value].map(word => word.replaceAll('-', '')) : wordPairs, mode === 'flash' ? 90 : 30) : chunks(passage.text, size);
   $('#reading-settings').hidden = isVisual(); $('#visual-settings').hidden = !isVisual();
   $('#syllable-setting').hidden = mode !== 'flash'; $('#pair-setting').hidden = mode !== 'pairs';
@@ -86,6 +94,7 @@ function schedule(ms) {
   timer = setTimeout(() => { index++; if (index >= groups.length) finish(); else { showChunk(); schedule(exposureTime()); } }, ms);
 }
 function start() {
+  if (mode === 'search') return;
   if (status === 'running') { pause(); return; }
   if (status === 'complete') reset();
   const resuming = status === 'paused'; status = 'running';
@@ -172,9 +181,13 @@ $$('[data-mode]').forEach(button => button.addEventListener('click', () => {
     $('#exercise-title').textContent = mode === 'flash' ? 'Uma palavra. Um olhar.' : 'Duas palavras, um ponto de foco.';
     $('#exercise-description').textContent = mode === 'flash' ? 'Fixe o olhar na letra vermelha e reconheça a palavra inteira.' : 'Mantenha o olhar no ponto central e perceba as diferenças entre as palavras.';
   }
+  if (mode === 'search') {
+    $('#exercise-title').textContent = 'Encontre a palavra em meio às outras.';
+    $('#exercise-description').textContent = 'Treine a atenção visual: procure todas as repetições da palavra-alvo, da esquerda para a direita.';
+  }
   reset();
 }));
-document.addEventListener('keydown', event => { if (event.code === 'Space' && !['INPUT', 'TEXTAREA', 'BUTTON', 'SELECT'].includes(event.target.tagName) && !$('#quiz').open && !$('#practice-view').hidden) { event.preventDefault(); start(); } });
+document.addEventListener('keydown', event => { if (mode !== 'search' && event.code === 'Space' && !['INPUT', 'TEXTAREA', 'BUTTON', 'SELECT'].includes(event.target.tagName) && !$('#quiz').open && !$('#practice-view').hidden) { event.preventDefault(); start(); } });
 document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
 for (const item of passages) {
   const card = document.createElement('article'); card.className = 'library-card';
@@ -182,7 +195,7 @@ for (const item of passages) {
   const category = document.createElement('span'); category.className = 'eyebrow'; category.textContent = item.category.toUpperCase();
   const title = document.createElement('h3'); title.textContent = item.title;
   const info = document.createElement('p'); info.textContent = `${wordCount(item.text)} palavras · ${item.questions.length} perguntas`;
-  const button = document.createElement('button'); button.className = 'primary'; button.textContent = 'Ler este texto →'; button.addEventListener('click', () => { passage = item; if (isVisual()) $('[data-mode="chunk"]').click(); reset(); switchView('practice'); toast(`Texto selecionado: ${item.title}`); });
+  const button = document.createElement('button'); button.className = 'primary'; button.textContent = 'Ler este texto →'; button.addEventListener('click', () => { passage = item; if (isVisual() || mode === 'search') $('[data-mode="chunk"]').click(); reset(); switchView('practice'); toast(`Texto selecionado: ${item.title}`); });
   card.append(category, title, info, button); $('#library-cards').append(card);
 }
 function filterLibrary() {
@@ -199,9 +212,10 @@ $('#custom-text').addEventListener('input', event => { $('#custom-count').textCo
 $('#use-custom').addEventListener('click', () => {
   const text = $('#custom-text').value.trim(), count = wordCount(text);
   if (count < 20 || count > 3000) { $('#custom-error').textContent = 'Insira um texto de 20 a 3.000 palavras.'; return; }
-  passage = { title: 'Seu próprio texto', category: 'Leitura pessoal', text }; if (isVisual()) $('[data-mode="chunk"]').click(); reset(); switchView('practice'); toast('Seu texto está pronto.');
+  passage = { title: 'Seu próprio texto', category: 'Leitura pessoal', text }; if (isVisual() || mode === 'search') $('[data-mode="chunk"]').click(); reset(); switchView('practice'); toast('Seu texto está pronto.');
 });
 $('#exposure').addEventListener('input', () => { $('#exposure-value').textContent = $('#exposure').value; reset(); });
 $('#syllables').addEventListener('change', reset);
 $('#pair-gap').addEventListener('input', () => { $('#word-display').style.setProperty('--pair-gap', `${$('#pair-gap').value}px`); reset(); });
+setupWordSearch();
 reset();
