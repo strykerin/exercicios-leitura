@@ -82,3 +82,8 @@ export function dailyPassageIndex(date = new Date()) {
   const day = Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000);
   return day % passages.length;
 }
+
+export function randomPassage(previous, random = Math.random) {
+  const choices = passages.filter(item => item !== previous);
+  return choices[Math.floor(random() * choices.length)];
+}

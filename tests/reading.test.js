@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chunks, wordCount, duration, localDay, streak, passages, scoreQuiz, dailyPassageIndex, textLengthGroup, validSpeed } from '../reading.js';
+import { chunks, wordCount, duration, localDay, streak, passages, scoreQuiz, dailyPassageIndex, randomPassage, textLengthGroup, validSpeed } from '../reading.js';
 test('chunks preserve words and keep a shorter final group', () => {
   assert.deepEqual(chunks(' One  two\nthree four five ', 3), ['One two three', 'four five']);
   assert.deepEqual(chunks('', 3), []);
@@ -59,4 +59,14 @@ test('saved speed accepts slider values and rejects corrupt storage', () => {
   for (const speed of ['100', '375', '800']) assert.equal(validSpeed(speed), Number(speed));
   for (const value of [null, '', 'oops', 'Infinity', '99', '825', '251']) assert.equal(validSpeed(value), 250);
   assert.equal(validSpeed(null, 400), 400);
+});
+
+test('random reading reaches every passage and never repeats the previous one', () => {
+  assert.deepEqual(passages.map((_, i) => randomPassage(undefined, () => (i + 0.5) / passages.length)), passages);
+  for (const previous of passages) {
+    const drawn = Array.from({ length: passages.length - 1 }, (_, i) => randomPassage(previous, () => (i + 0.5) / (passages.length - 1)));
+    assert.equal(new Set(drawn).size, passages.length - 1);
+    assert.ok(!drawn.includes(previous));
+    assert.ok(drawn.every(item => passages.includes(item)));
+  }
 });
