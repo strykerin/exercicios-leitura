@@ -1,5 +1,6 @@
 import { syllableWords, wordPairLevels, randomSequence, splitFocus, splitBlockFocus } from './visual-exercises.js';
 import { setupWordSearch } from './word-search.js';
+import { setupRowExercises } from './row-exercises.js';
 import { chunks, wordCount, duration, passages, scoreQuiz, randomPassage, validSpeed } from './reading.js';
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -16,6 +17,7 @@ $('#speed').value = wpm;
 $('#speed-value').textContent = wpm;
 function toast(message) { $('#toast').textContent = message; $('#toast').hidden = false; setTimeout(() => $('#toast').hidden = true, 4000); }
 const isVisual = () => mode === 'flash' || mode === 'pairs';
+const isWorksheet = () => ['search', 'figures', 'memory'].includes(mode);
 const exposureTime = () => isVisual() ? Number($('#exposure').value) : duration(groups[index], wpm);
 function setReadingFocus(focused) {
   document.body.classList.toggle('reading-focus', focused);
@@ -30,9 +32,11 @@ function reset() {
   $('#selected-text-title').textContent = passage.title;
   $('#selected-text-info').textContent = `${wordCount(passage.text)} palavras · ${passage.questions?.length ? `${passage.questions.length} perguntas` : 'Reflexão ao final'}`;
   $('#word-search').hidden = mode !== 'search';
-  $('#reader').hidden = mode === 'search';
-  $('.exercise-footer').hidden = mode === 'search';
-  if (mode === 'search') {
+  $('#figure-count').hidden = mode !== 'figures';
+  $('#word-memory').hidden = mode !== 'memory';
+  $('#reader').hidden = isWorksheet();
+  $('.exercise-footer').hidden = isWorksheet();
+  if (isWorksheet()) {
     $('#reading-settings').hidden = true; $('#visual-settings').hidden = true;
     return;
   }
@@ -111,7 +115,7 @@ function schedule(ms) {
   timer = setTimeout(() => { index++; if (index >= groups.length) finish(); else { showChunk(); schedule(exposureTime()); } }, ms);
 }
 function start() {
-  if (mode === 'search') return;
+  if (isWorksheet()) return;
   if (status === 'running') { pause(); return; }
   if (status === 'complete') reset();
   const resuming = status === 'paused'; status = 'running';
@@ -210,7 +214,7 @@ $$('[data-mode]').forEach(button => button.addEventListener('click', () => {
   mode = button.dataset.mode; $$('[data-mode]').forEach(b => { b.classList.toggle('selected', b === button); b.setAttribute('aria-selected', String(b === button)); });
   reset();
 }));
-document.addEventListener('keydown', event => { if (mode !== 'search' && event.code === 'Space' && !['INPUT', 'TEXTAREA', 'BUTTON', 'SELECT', 'SUMMARY'].includes(event.target.tagName) && !$('#quiz').open && !$('#practice-view').hidden) { event.preventDefault(); start(); } });
+document.addEventListener('keydown', event => { if (!isWorksheet() && event.code === 'Space' && !['INPUT', 'TEXTAREA', 'BUTTON', 'SELECT', 'SUMMARY'].includes(event.target.tagName) && !$('#quiz').open && !$('#practice-view').hidden) { event.preventDefault(); start(); } });
 document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
 function newReading() {
   passage = randomPassage(passage);
@@ -228,4 +232,5 @@ $('#exposure').addEventListener('input', () => { $('#exposure-value').textConten
 $('#syllables').addEventListener('change', reset);
 $('#pair-syllables').addEventListener('change', reset);
 setupWordSearch();
+setupRowExercises();
 reset();

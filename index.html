@@ -6,17 +6,36 @@
 <main>
   <section id="practice-view" class="view">
     <div class="workspace-grid"><div class="training">
-      <div class="mode-tabs" role="tablist" aria-label="Modo de exercício"><button role="tab" aria-selected="true" class="selected" data-mode="chunk"><small>01</small><span>Leitura em blocos</span></button><button role="tab" aria-selected="false" data-mode="paced"><small>02</small><span>Leitura guiada</span></button><button role="tab" aria-selected="false" data-mode="flash"><small>03</small><span>Palavras inteiras</span></button><button role="tab" aria-selected="false" data-mode="pairs"><small>04</small><span>Palavras parecidas</span></button><button role="tab" aria-selected="false" data-mode="search"><small>05</small><span>Localizar palavras</span></button></div>
+      <div class="mode-tabs" role="tablist" aria-label="Modo de exercício">
+        <button role="tab" aria-selected="true" class="selected" data-mode="chunk"><small>01</small><span>Leitura em blocos</span></button>
+        <button role="tab" aria-selected="false" data-mode="paced"><small>02</small><span>Leitura guiada</span></button>
+        <button role="tab" aria-selected="false" data-mode="flash"><small>03</small><span>Palavras inteiras</span></button>
+        <button role="tab" aria-selected="false" data-mode="pairs"><small>04</small><span>Palavras parecidas</span></button>
+        <button role="tab" aria-selected="false" data-mode="search"><small>05</small><span>Localizar palavras</span></button>
+        <button role="tab" aria-selected="false" data-mode="figures"><small>06</small><span>Contar figuras</span></button>
+        <button role="tab" aria-selected="false" data-mode="memory"><small>07</small><span>Palavra repetida</span></button>
+      </div>
       <div id="text-picker" class="text-picker">
         <div class="text-picker-summary" aria-live="polite"><strong id="selected-text-title"></strong><span id="selected-text-info"></span></div>
         <button id="new-reading" class="secondary" type="button">Nova leitura ↻</button>
       </div>
       <article class="exercise-card">
+        <section id="figure-count" class="row-exercise" aria-labelledby="figure-title" hidden>
+          <div class="row-exercise-heading"><div><h2 id="figure-title">Contar figuras</h2><p>Conte mentalmente quantas figuras iguais ao modelo aparecem em cada linha. Não conte o próprio modelo.</p></div></div>
+          <div class="row-toolbar"><button type="button" class="secondary" data-action="shuffle">Embaralhar figuras ↻</button><button type="button" class="secondary" data-action="new">Nova série</button><span>8 linhas · 20 figuras por linha</span></div>
+          <p class="row-hint">Observe os detalhes: a forma, a quantidade e a posição dos elementos também contam.</p>
+          <ol class="row-exercise-list"></ol>
+        </section>
+        <section id="word-memory" class="row-exercise" aria-labelledby="memory-title" hidden>
+          <div class="row-exercise-heading"><div><h2 id="memory-title">Palavra repetida</h2><p>Leia cada linha da esquerda para a direita, guardando as palavras na memória. Qual delas aparece duas vezes?</p></div></div>
+          <div class="row-toolbar"><button type="button" class="secondary" data-action="shuffle">Embaralhar palavras ↻</button><button type="button" class="secondary" data-action="new">Nova série</button><span>15 linhas · 5 palavras por linha</span></div>
+          <p class="row-hint">Identifique mentalmente a palavra repetida em cada linha. Tente evitar voltar aos termos anteriores.</p>
+          <ol class="row-exercise-list"></ol>
+        </section>
         <section id="word-search" aria-label="Localizar palavras" hidden>
           <div class="search-toolbar"><div><label for="search-syllables">Sílabas por palavra · dificuldade</label><select id="search-syllables"><option value="1">1 sílaba · Muito fácil</option><option value="2" selected>2 sílabas · Fácil</option><option value="3">3 sílabas · Intermediário</option><option value="4">4 sílabas · Difícil</option><option value="5">5 sílabas · Muito difícil</option></select></div><button id="search-new" class="secondary" type="button">Nova série ↻</button></div>
-          <p class="search-instructions">Marque todas as ocorrências da palavra-alvo.</p>
+          <p class="search-instructions">Localize visualmente todas as ocorrências da palavra-alvo em cada linha.</p>
           <ol id="search-exercises" class="search-exercises"></ol>
-          <div class="search-footer"><div><p id="search-feedback" role="status" aria-live="polite"></p><p id="search-legend" hidden><span class="search-correct">✓ Correta</span> · <span class="search-missed">Não marcada (sublinhada)</span> · <span class="search-wrong">Incorreta (riscada)</span></p></div><div class="controls"><button id="search-clear" type="button" class="secondary">Limpar marcações</button><button id="search-check" type="button" class="primary">Conferir respostas →</button></div></div>
         </section>
         <div class="reader" id="reader"><div id="reading-content" class="reading-content"><span class="focus-corner tl"></span><span class="focus-corner tr"></span><span class="focus-corner bl"></span><span class="focus-corner br"></span><div id="word-display" tabindex="0" aria-label="Texto da leitura"></div></div><div class="read-track"><i id="read-fill"></i></div></div>
         <div class="settings" id="reading-settings"><label>Velocidade de leitura <span><output id="speed-value">250</output> <small>PPM</small></span><input id="speed" type="range" min="100" max="800" step="25" value="250"><div class="range-labels"><span>100 PPM</span><span>800 PPM</span></div></label><div class="chunk-setting"><label>Palavras por bloco</label><div class="chunk-buttons" aria-label="Palavras por bloco"><button data-chunk="1">1</button><button data-chunk="2">2</button><button data-chunk="3" class="selected" aria-pressed="true">3</button><button data-chunk="4">4</button><button data-chunk="5">5</button><button data-chunk="6">6</button></div></div></div>

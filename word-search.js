@@ -54,33 +54,13 @@ export function createSearchExercises(syllables, random = Math.random) {
   });
 }
 
-export function scoreSearchExercise(exercise, selected) {
-  let hits = 0, missed = 0, wrong = 0;
-  exercise.words.forEach((word, i) => {
-    if (word === exercise.target) selected.has(i) ? hits++ : missed++;
-    else if (selected.has(i)) wrong++;
-  });
-  return { hits, missed, wrong, complete: missed === 0 && wrong === 0 };
-}
-
 export function setupWordSearch() {
   const panel = document.querySelector('#word-search');
   const list = panel.querySelector('#search-exercises');
   const level = panel.querySelector('#search-syllables');
-  const feedback = panel.querySelector('#search-feedback');
-  const check = panel.querySelector('#search-check');
-  const clear = panel.querySelector('#search-clear');
-  let exercises, selections, checked;
-
-  function updateSelectionCount() {
-    const count = selections.reduce((total, selected) => total + selected.size, 0);
-    feedback.textContent = `${count} ${count === 1 ? 'palavra marcada' : 'palavras marcadas'} · Encontre todas as repetições de cada palavra-alvo.`;
-  }
+  let exercises;
 
   function render() {
-    checked = false;
-    selections = exercises.map(() => new Set());
-    check.disabled = false;
     list.replaceChildren(...exercises.map((exercise, rowIndex) => {
       const row = document.createElement('li'); row.className = 'search-row';
       const heading = document.createElement('h3'); heading.id = `search-target-${rowIndex}`;
@@ -88,50 +68,18 @@ export function setupWordSearch() {
       heading.append(number, document.createTextNode(exercise.target));
       const words = document.createElement('div'); words.className = 'search-words';
       words.setAttribute('role', 'group'); words.setAttribute('aria-labelledby', heading.id);
-      exercise.words.forEach((word, wordIndex) => {
-        const button = document.createElement('button'); button.type = 'button';
-        button.className = 'search-word'; button.textContent = word;
-        button.setAttribute('aria-pressed', 'false');
-        button.addEventListener('click', () => {
-          if (checked) return;
-          const selected = selections[rowIndex];
-          if (selected.has(wordIndex)) selected.delete(wordIndex); else selected.add(wordIndex);
-          button.setAttribute('aria-pressed', String(selected.has(wordIndex)));
-          updateSelectionCount();
-        });
-        words.append(button);
+      exercise.words.forEach(word => {
+        const text = document.createElement('span');
+        text.className = 'search-word'; text.textContent = word;
+        words.append(text);
       });
-      const result = document.createElement('p'); result.className = 'search-row-result'; result.hidden = true;
-      row.append(heading, words, result);
+      row.append(heading, words);
       return row;
     }));
-    updateSelectionCount();
-    panel.querySelector('#search-legend').hidden = true;
   }
 
   function newSeries() { exercises = createSearchExercises(Number(level.value)); render(); }
   level.addEventListener('change', newSeries);
   panel.querySelector('#search-new').addEventListener('click', newSeries);
-  clear.addEventListener('click', render);
-  check.addEventListener('click', () => {
-    checked = true; check.disabled = true;
-    let complete = 0, hits = 0, missed = 0, wrong = 0;
-    exercises.forEach((exercise, rowIndex) => {
-      const score = scoreSearchExercise(exercise, selections[rowIndex]);
-      complete += Number(score.complete); hits += score.hits; missed += score.missed; wrong += score.wrong;
-      const row = list.children[rowIndex];
-      row.querySelectorAll('button').forEach((button, wordIndex) => {
-        const selected = selections[rowIndex].has(wordIndex), match = exercise.words[wordIndex] === exercise.target;
-        const state = match ? (selected ? 'correct' : 'missed') : selected ? 'wrong' : '';
-        const label = { correct: 'correta', missed: 'não marcada', wrong: 'incorreta' }[state];
-        if (state) { button.classList.add(`search-${state}`); button.setAttribute('aria-label', `${button.textContent}: ${label}`); }
-        button.setAttribute('aria-disabled', 'true');
-      });
-      const result = row.querySelector('.search-row-result'); result.hidden = false;
-      result.textContent = score.complete ? 'Todas encontradas!' : `Corretas: ${score.hits} · Não marcadas: ${score.missed} · Incorretas: ${score.wrong}`;
-    });
-    feedback.textContent = `Exercícios completos: ${complete} de ${exercises.length} · Corretas: ${hits} · Não marcadas: ${missed} · Incorretas: ${wrong}.`;
-    panel.querySelector('#search-legend').hidden = false;
-  });
   newSeries();
 }
