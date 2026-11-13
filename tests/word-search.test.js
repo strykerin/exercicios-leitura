@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { searchWords, createSearchExercises, SEARCH_EXERCISE_COUNT, SEARCH_WORD_COUNT } from '../word-search.js';
 
-test('five syllable levels have enough unique targets for 30 exercises', () => {
-  assert.deepEqual(Object.keys(searchWords), ['1', '2', '3', '4', '5']);
+test('only the hardest level is available with enough unique five-syllable words', () => {
+  assert.deepEqual(Object.keys(searchWords), ['5']);
   for (const [count, words] of Object.entries(searchWords)) {
     assert.ok(words.length >= 30);
     assert.equal(new Set(words.map(word => word.replaceAll('-', ''))).size, words.length);
@@ -14,13 +14,14 @@ test('five syllable levels have enough unique targets for 30 exercises', () => {
 test('every series triples the reference with distinct targets and repeated matches', () => {
   for (const count of Object.keys(searchWords)) {
     for (const random of [() => 0, () => 0.5, () => 0.9999, Math.random]) {
-      const exercises = createSearchExercises(count, random);
+      const exercises = createSearchExercises(random);
       assert.equal(exercises.length, 10 * 3);
       assert.equal(exercises.length, SEARCH_EXERCISE_COUNT);
       assert.equal(new Set(exercises.map(exercise => exercise.target)).size, 30);
       const bank = new Set(searchWords[count].map(word => word.replaceAll('-', '')));
       for (const { target, words } of exercises) {
         assert.equal(words.length, SEARCH_WORD_COUNT);
+        assert.equal(words.length, 30);
         assert.ok(bank.has(target));
         words.forEach(word => assert.ok(bank.has(word)));
         const matches = words.filter(word => word === target).length;
@@ -30,5 +31,4 @@ test('every series triples the reference with distinct targets and repeated matc
       }
     }
   }
-  assert.throws(() => createSearchExercises(6), RangeError);
 });

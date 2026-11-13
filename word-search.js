@@ -1,13 +1,7 @@
-import { syllableWords, randomSequence } from './visual-exercises.js';
+import { randomSequence } from './visual-exercises.js';
 
-// Explicit divisions make every difficulty level easy to review.
+// Explicit divisions keep the fixed five-syllable difficulty easy to review.
 export const searchWords = {
-  1: ['sol', 'sal', 'sul', 'mar', 'par', 'lar', 'bar', 'dor', 'cor', 'flor',
-    'pão', 'mão', 'cão', 'chão', 'não', 'são', 'grão', 'vão', 'bom', 'som',
-    'tom', 'dom', 'bem', 'trem', 'quem', 'cem', 'sem', 'fim', 'sim', 'rim',
-    'rei', 'lei', 'boi', 'foi', 'pai', 'vai', 'pé', 'fé', 'chá', 'já',
-    'luz', 'cruz', 'voz', 'vez', 'nós', 'paz', 'faz', 'giz', 'três', 'mês'],
-  ...syllableWords,
   5: ['a-ca-de-mi-a', 'a-gri-cul-tu-ra', 'a-li-men-ta-ção', 'a-ma-du-re-cer',
     'a-po-sen-ta-do', 'a-pre-sen-ta-ção', 'a-pro-vei-ta-do',
     'ar-te-sa-na-to', 'as-so-ci-a-ção', 'a-ten-ci-o-so', 'a-tu-a-li-zar',
@@ -27,7 +21,7 @@ export const searchWords = {
 };
 
 export const SEARCH_EXERCISE_COUNT = 30; // Three times the 10 rows in the reference.
-export const SEARCH_WORD_COUNT = 20;
+export const SEARCH_WORD_COUNT = 30;
 
 function letterDistance(left, right) {
   let previous = Array.from({ length: right.length + 1 }, (_, i) => i);
@@ -41,9 +35,8 @@ function letterDistance(left, right) {
   return previous[right.length];
 }
 
-export function createSearchExercises(syllables, random = Math.random) {
-  const bank = searchWords[syllables];
-  if (!bank) throw new RangeError('Escolha um nível de 1 a 5 sílabas.');
+export function createSearchExercises(random = Math.random) {
+  const bank = searchWords[5];
   const words = bank.map(word => word.replaceAll('-', ''));
   return randomSequence(words, SEARCH_EXERCISE_COUNT, random).map((target, index) => {
     const occurrences = index % 2 === 0 ? 2 : 3;
@@ -57,8 +50,7 @@ export function createSearchExercises(syllables, random = Math.random) {
 export function setupWordSearch() {
   const panel = document.querySelector('#word-search');
   const list = panel.querySelector('#search-exercises');
-  const level = panel.querySelector('#search-syllables');
-  let exercises;
+  const exercises = createSearchExercises();
 
   function render() {
     list.replaceChildren(...exercises.map((exercise, rowIndex) => {
@@ -78,8 +70,5 @@ export function setupWordSearch() {
     }));
   }
 
-  function newSeries() { exercises = createSearchExercises(Number(level.value)); render(); }
-  level.addEventListener('change', newSeries);
-  panel.querySelector('#search-new').addEventListener('click', newSeries);
-  newSeries();
+  render();
 }
